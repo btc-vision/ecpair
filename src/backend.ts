@@ -50,6 +50,13 @@ export interface CryptoBackend {
     isPoint(p: Uint8Array): boolean;
 
     /**
+     * Returns `true` if `p` is a valid 32-byte x-only public key whose
+     * x-coordinate lies on the secp256k1 curve.
+     * @param p - 32-byte x-only encoding.
+     */
+    isXOnlyPoint(p: Uint8Array): boolean;
+
+    /**
      * Derives the public key for a private key scalar.
      * @param d - Private key scalar.
      * @param compressed - Return compressed (33 bytes) when `true` (default), uncompressed (65 bytes) when `false`.

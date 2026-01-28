@@ -83,6 +83,15 @@ export class LegacyBackend implements CryptoBackend {
     }
 
     /** @inheritDoc */
+    public isXOnlyPoint(p: Uint8Array): boolean {
+        if (p.length !== 32) return false;
+        const compressed = new Uint8Array(33);
+        compressed[0] = 0x02;
+        compressed.set(p, 1);
+        return this.#ecc.isPoint(compressed);
+    }
+
+    /** @inheritDoc */
     public pointFromScalar(d: PrivateKey, compressed?: boolean): PublicKey | null {
         return this.#ecc.pointFromScalar(d, compressed) as PublicKey | null;
     }

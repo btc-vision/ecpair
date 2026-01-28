@@ -37,6 +37,29 @@ export function verifyCryptoBackend(backend: CryptoBackend): void {
     );
 
     assert(
+        backend.isXOnlyPoint(
+            h('79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798'),
+        ),
+        'isXOnlyPoint should accept generator x-coordinate',
+    );
+    assert(
+        !backend.isXOnlyPoint(
+            h('0000000000000000000000000000000000000000000000000000000000000005'),
+        ),
+        'isXOnlyPoint should reject x-coordinate not on curve',
+    );
+    assert(
+        !backend.isXOnlyPoint(
+            h('0000000000000000000000000000000000000000000000000000000000000000'),
+        ),
+        'isXOnlyPoint should reject zero',
+    );
+    assert(
+        !backend.isXOnlyPoint(h('79be667ef9dcbbac55a06295ce870b07')),
+        'isXOnlyPoint should reject wrong length',
+    );
+
+    assert(
         backend.isPrivate(h('79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798')),
         'isPrivate should accept valid scalar',
     );

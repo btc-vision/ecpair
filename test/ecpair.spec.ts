@@ -96,6 +96,7 @@ function mockBackend(
     const keys: (keyof CryptoBackend)[] = [
         'isPrivate',
         'isPoint',
+        'isXOnlyPoint',
         'pointFromScalar',
         'pointCompress',
         'pointAddScalar',

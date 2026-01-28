@@ -56,6 +56,17 @@ export class NobleBackend implements CryptoBackend {
     }
 
     /** @inheritDoc */
+    public isXOnlyPoint(p: Uint8Array): boolean {
+        if (p.length !== 32) return false;
+        try {
+            schnorr.utils.lift_x(bytesToBigInt(p));
+            return true;
+        } catch {
+            return false;
+        }
+    }
+
+    /** @inheritDoc */
     public pointFromScalar(d: PrivateKey, compressed?: boolean): PublicKey | null {
         try {
             return secp256k1.getPublicKey(d, compressed ?? true) as PublicKey;
