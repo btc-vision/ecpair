@@ -10,8 +10,15 @@ import type {
 } from './branded.js';
 import { SignerCapability } from './capability.js';
 import type { Network } from './networks.js';
-import { assertBytes32, createPrivateKey, createPublicKey, createXOnlyPublicKey, concatBytes, EC_N } from './types.js';
-import { encodeWIF, decodeWIF } from './wif.js';
+import {
+    assertBytes32,
+    concatBytes,
+    createPrivateKey,
+    createPublicKey,
+    createXOnlyPublicKey,
+    EC_N,
+} from './types.js';
+import { decodeWIF, encodeWIF } from './wif.js';
 
 /**
  * Minimal synchronous signer interface.
@@ -245,6 +252,71 @@ export class ECPairSigner implements UniversalSigner {
         }
     }
 
+    /** Raw private key bytes, or `undefined` for public-key-only signers. */
+    public get privateKey(): PrivateKey | undefined {
+        return this.#privateKey;
+    }
+
+    /**
+     * SEC1-encoded public key.  Lazily derived from the private key when
+     * the signer was created via {@link fromPrivateKey} or {@link fromWIF}.
+     *
+     * @throws If neither a private nor public key is available (should never happen).
+     */
+    public get publicKey(): PublicKey {
+        if (this.#publicKey === undefined) {
+            const pk = this.#privateKey;
+            if (pk === undefined) {
+                throw new Error('Missing both private and public key');
+            }
+            const p = this.#backend.pointFromScalar(pk, this.#compressed);
+            if (p === null) {
+                throw new Error('Failed to derive public key from private key');
+            }
+            this.#publicKey = p;
+        }
+        return this.#publicKey;
+    }
+
+    /** 32-byte BIP-340 x-only public key (lazily derived and cached). */
+    public get xOnlyPublicKey(): XOnlyPublicKey {
+        if (this.#xOnlyPublicKey === undefined) {
+            this.#xOnlyPublicKey = toXOnly(this.publicKey);
+        }
+        return this.#xOnlyPublicKey;
+    }
+
+    /** Network this signer is bound to. */
+    public get network(): Network {
+        return this.#network;
+    }
+
+    /** Whether the public key is in compressed SEC1 form. */
+    public get compressed(): boolean {
+        return this.#compressed;
+    }
+
+    /**
+     * Bitmask of {@link SignerCapability} flags representing the operations
+     * this signer can perform.  Lazily computed and cached.
+     */
+    public get capabilities(): number {
+        if (this.#capabilities === undefined) {
+            let caps = SignerCapability.EcdsaVerify | SignerCapability.PublicKeyTweak;
+            if (this.#privateKey !== undefined) {
+                caps |= SignerCapability.EcdsaSign | SignerCapability.PrivateKeyExport;
+            }
+            if (this.#backend.signSchnorr && this.#privateKey !== undefined) {
+                caps |= SignerCapability.SchnorrSign;
+            }
+            if (this.#backend.verifySchnorr) {
+                caps |= SignerCapability.SchnorrVerify;
+            }
+            this.#capabilities = caps;
+        }
+        return this.#capabilities;
+    }
+
     /**
      * Creates a signer from a raw private key.
      *
@@ -317,8 +389,13 @@ export class ECPairSigner implements UniversalSigner {
      * @param network - Target network.
      * @param options - Optional settings (rng, compressed).
      */
-    public static makeRandom(backend: CryptoBackend, network: Network, options?: RandomSignerOptions): ECPairSigner {
-        const rng = options?.rng ?? ((size: number) => crypto.getRandomValues(new Uint8Array(size)));
+    public static makeRandom(
+        backend: CryptoBackend,
+        network: Network,
+        options?: RandomSignerOptions,
+    ): ECPairSigner {
+        const rng =
+            options?.rng ?? ((size: number) => crypto.getRandomValues(new Uint8Array(size)));
         const seed = rng(FIPS_SEED_LENGTH);
         if (seed.length !== FIPS_SEED_LENGTH) {
             throw new TypeError(
@@ -328,72 +405,12 @@ export class ECPairSigner implements UniversalSigner {
         const num = bytesToBigInt(seed);
         const reduced = (num % (EC_N - 1n)) + 1n;
         const privateKeyBytes = bigintToBytes32(reduced);
-        return ECPairSigner.fromPrivateKey(backend, createPrivateKey(privateKeyBytes), network, options);
-    }
-
-    /** Raw private key bytes, or `undefined` for public-key-only signers. */
-    public get privateKey(): PrivateKey | undefined {
-        return this.#privateKey;
-    }
-
-    /**
-     * SEC1-encoded public key.  Lazily derived from the private key when
-     * the signer was created via {@link fromPrivateKey} or {@link fromWIF}.
-     *
-     * @throws If neither a private nor public key is available (should never happen).
-     */
-    public get publicKey(): PublicKey {
-        if (this.#publicKey === undefined) {
-            const pk = this.#privateKey;
-            if (pk === undefined) {
-                throw new Error('Missing both private and public key');
-            }
-            const p = this.#backend.pointFromScalar(pk, this.#compressed);
-            if (p === null) {
-                throw new Error('Failed to derive public key from private key');
-            }
-            this.#publicKey = p;
-        }
-        return this.#publicKey;
-    }
-
-    /** 32-byte BIP-340 x-only public key (lazily derived and cached). */
-    public get xOnlyPublicKey(): XOnlyPublicKey {
-        if (this.#xOnlyPublicKey === undefined) {
-            this.#xOnlyPublicKey = toXOnly(this.publicKey);
-        }
-        return this.#xOnlyPublicKey;
-    }
-
-    /** Network this signer is bound to. */
-    public get network(): Network {
-        return this.#network;
-    }
-
-    /** Whether the public key is in compressed SEC1 form. */
-    public get compressed(): boolean {
-        return this.#compressed;
-    }
-
-    /**
-     * Bitmask of {@link SignerCapability} flags representing the operations
-     * this signer can perform.  Lazily computed and cached.
-     */
-    public get capabilities(): number {
-        if (this.#capabilities === undefined) {
-            let caps = SignerCapability.EcdsaVerify | SignerCapability.PublicKeyTweak;
-            if (this.#privateKey !== undefined) {
-                caps |= SignerCapability.EcdsaSign | SignerCapability.PrivateKeyExport;
-            }
-            if (this.#backend.signSchnorr && this.#privateKey !== undefined) {
-                caps |= SignerCapability.SchnorrSign;
-            }
-            if (this.#backend.verifySchnorr) {
-                caps |= SignerCapability.SchnorrVerify;
-            }
-            this.#capabilities = caps;
-        }
-        return this.#capabilities;
+        return ECPairSigner.fromPrivateKey(
+            backend,
+            createPrivateKey(privateKeyBytes),
+            network,
+            options,
+        );
     }
 
     /**
@@ -507,9 +524,7 @@ export class ECPairSigner implements UniversalSigner {
         if (privateKey === undefined) {
             throw new Error('Missing private key');
         }
-        const effectiveKey = hasOddY(pubKey)
-            ? this.#backend.privateNegate(privateKey)
-            : privateKey;
+        const effectiveKey = hasOddY(pubKey) ? this.#backend.privateNegate(privateKey) : privateKey;
 
         const tweakedPrivateKey = this.#backend.privateAdd(effectiveKey, t);
         if (tweakedPrivateKey === null) throw new Error('Invalid tweaked private key!');

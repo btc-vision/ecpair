@@ -28,46 +28,32 @@ function assert(condition: boolean, message: string): void {
  */
 export function verifyCryptoBackend(backend: CryptoBackend): void {
     assert(
-        backend.isPoint(
-            h('0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798'),
-        ),
+        backend.isPoint(h('0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798')),
         'isPoint should accept generator point',
     );
     assert(
-        !backend.isPoint(
-            h('030000000000000000000000000000000000000000000000000000000000000005'),
-        ),
+        !backend.isPoint(h('030000000000000000000000000000000000000000000000000000000000000005')),
         'isPoint should reject invalid point',
     );
 
     assert(
-        backend.isPrivate(
-            h('79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798'),
-        ),
+        backend.isPrivate(h('79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798')),
         'isPrivate should accept valid scalar',
     );
     assert(
-        backend.isPrivate(
-            h('fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364140'),
-        ),
+        backend.isPrivate(h('fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364140')),
         'isPrivate should accept n-1',
     );
     assert(
-        !backend.isPrivate(
-            h('0000000000000000000000000000000000000000000000000000000000000000'),
-        ),
+        !backend.isPrivate(h('0000000000000000000000000000000000000000000000000000000000000000')),
         'isPrivate should reject zero',
     );
     assert(
-        !backend.isPrivate(
-            h('fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141'),
-        ),
+        !backend.isPrivate(h('fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141')),
         'isPrivate should reject n',
     );
     assert(
-        !backend.isPrivate(
-            h('fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364142'),
-        ),
+        !backend.isPrivate(h('fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364142')),
         'isPrivate should reject n+1',
     );
 
@@ -162,7 +148,9 @@ export function verifyCryptoBackend(backend: CryptoBackend): void {
     assert(
         bytesEqual(
             backend.pointCompress(
-                h('0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798') as PublicKey,
+                h(
+                    '0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798',
+                ) as PublicKey,
                 true,
             ),
             h('0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798'),
@@ -172,7 +160,9 @@ export function verifyCryptoBackend(backend: CryptoBackend): void {
     assert(
         bytesEqual(
             backend.pointCompress(
-                h('0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798') as PublicKey,
+                h(
+                    '0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798',
+                ) as PublicKey,
                 false,
             ),
             h(
@@ -247,9 +237,7 @@ export function verifyCryptoBackend(backend: CryptoBackend): void {
     assert(
         backend.verify(
             h('5e9f0a0d593efdcf78ac923bc3313e4e7d408d574354ee2b3288c0da9fbba6ed') as MessageHash,
-            h(
-                '0379be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798',
-            ) as PublicKey,
+            h('0379be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798') as PublicKey,
             signResult,
         ),
         'verify known vector failed',
@@ -275,8 +263,12 @@ export function verifyCryptoBackend(backend: CryptoBackend): void {
     if (backend.verifySchnorr) {
         assert(
             backend.verifySchnorr(
-                h('7e2d58d8b3bcdf1abadec7829054f90dda9805aab56c77333024b9d0a508b75c') as MessageHash,
-                h('dd308afec5777e13121fa72b9cc1b7cc0139715309b086c960e18fd969774eb8') as XOnlyPublicKey,
+                h(
+                    '7e2d58d8b3bcdf1abadec7829054f90dda9805aab56c77333024b9d0a508b75c',
+                ) as MessageHash,
+                h(
+                    'dd308afec5777e13121fa72b9cc1b7cc0139715309b086c960e18fd969774eb8',
+                ) as XOnlyPublicKey,
                 h(
                     '5831aaeed7b44bb74e5eab94ba9d4294c49bcf2a60728d8b4c200f50dd313c1bab745879a5ad954a72c45a91c3a51d3c7adea98d82f8481e0e1e03674a6f3fb7',
                 ) as import('./branded.js').SchnorrSignature,

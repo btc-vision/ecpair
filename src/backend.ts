@@ -121,7 +121,11 @@ export interface CryptoBackend {
      * @param privateKey - Signing key.
      * @param extraEntropy - Optional auxiliary randomness.
      */
-    signSchnorr?(hash: MessageHash, privateKey: PrivateKey, extraEntropy?: Uint8Array): SchnorrSignature;
+    signSchnorr?(
+        hash: MessageHash,
+        privateKey: PrivateKey,
+        extraEntropy?: Uint8Array,
+    ): SchnorrSignature;
 
     /**
      * Verifies a 64-byte BIP-340 Schnorr signature.
@@ -132,5 +136,9 @@ export interface CryptoBackend {
      * @param publicKey - 32-byte x-only public key.
      * @param signature - 64-byte Schnorr signature.
      */
-    verifySchnorr?(hash: MessageHash, publicKey: XOnlyPublicKey, signature: SchnorrSignature): boolean;
+    verifySchnorr?(
+        hash: MessageHash,
+        publicKey: XOnlyPublicKey,
+        signature: SchnorrSignature,
+    ): boolean;
 }

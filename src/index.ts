@@ -53,7 +53,13 @@ export { SignerCapability } from './capability.js';
 
 export type { CryptoBackend, Parity, XOnlyPointAddTweakResult } from './backend.js';
 
-export type { Signer, SignerAsync, UniversalSigner, SignerOptions, RandomSignerOptions } from './signer.js';
+export type {
+    Signer,
+    SignerAsync,
+    UniversalSigner,
+    SignerOptions,
+    RandomSignerOptions,
+} from './signer.js';
 export { ECPairSigner } from './signer.js';
 
 export { NobleBackend, createNobleBackend } from './noble.js';

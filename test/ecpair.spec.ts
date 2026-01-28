@@ -1,57 +1,57 @@
 import { createHash } from 'node:crypto';
-import { describe, it, expect } from 'vitest';
-import {
-    ECPairSigner,
-    NobleBackend,
-    createNobleBackend,
-    LegacyBackend,
-    createLegacyBackend,
-    SignerCapability,
-    fromHexInternal,
-    toHex,
-    concatBytes,
-    bytesEqual,
-    compareBytes,
-    isZeroBytes,
-    EC_N,
-    EC_P,
-    SATOSHI_MAX,
-    isBytes32,
-    isBytes20,
-    isPrivateKey,
-    isPublicKey,
-    isXOnlyPublicKey,
-    isSignature,
-    isSchnorrSignature,
-    isMessageHash,
-    isSatoshi,
-    assertBytes32,
-    assertPrivateKey,
-    assertPublicKey,
-    assertXOnlyPublicKey,
-    assertMessageHash,
-    createBytes32,
-    createBytes20,
-    createPrivateKey,
-    createPublicKey,
-    createXOnlyPublicKey,
-    createSignature,
-    createSchnorrSignature,
-    createMessageHash,
-    createSatoshi,
-    encodeWIF,
-    decodeWIF,
-    verifyCryptoBackend,
-} from '../src/index.js';
+import { describe, expect, it } from 'vitest';
 import type {
+    Bytes32,
     CryptoBackend,
     PrivateKey,
     PublicKey,
-    Bytes32,
-    XOnlyPublicKey,
-    Signature,
     SchnorrSignature,
+    Signature,
     TinySecp256k1Interface,
+    XOnlyPublicKey,
+} from '../src/index.js';
+import {
+    assertBytes32,
+    assertMessageHash,
+    assertPrivateKey,
+    assertPublicKey,
+    assertXOnlyPublicKey,
+    bytesEqual,
+    compareBytes,
+    concatBytes,
+    createBytes20,
+    createBytes32,
+    createLegacyBackend,
+    createMessageHash,
+    createNobleBackend,
+    createPrivateKey,
+    createPublicKey,
+    createSatoshi,
+    createSchnorrSignature,
+    createSignature,
+    createXOnlyPublicKey,
+    decodeWIF,
+    EC_N,
+    EC_P,
+    ECPairSigner,
+    encodeWIF,
+    fromHexInternal,
+    isBytes20,
+    isBytes32,
+    isMessageHash,
+    isPrivateKey,
+    isPublicKey,
+    isSatoshi,
+    isSchnorrSignature,
+    isSignature,
+    isXOnlyPublicKey,
+    isZeroBytes,
+    LegacyBackend,
+    NobleBackend,
+    SATOSHI_MAX,
+    SignerCapability,
+    toHex,
+    verifyCryptoBackend,
 } from '../src/index.js';
 import * as networks from './networks.js';
 import * as tinysecp from 'tiny-secp256k1';
@@ -78,14 +78,15 @@ function tapTweakHash(pubKey: Uint8Array, tweak?: Uint8Array): Uint8Array {
 
 const ZERO = new Uint8Array(32);
 const ONE = h('0000000000000000000000000000000000000000000000000000000000000001');
-const GROUP_ORDER = h(
-    'fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141',
-);
-const GROUP_ORDER_LESS_1 = h(
-    'fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364140',
-);
+const GROUP_ORDER = h('fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141');
+const GROUP_ORDER_LESS_1 = h('fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364140');
 
-const NETWORKS_LIST = Object.values(networks) as readonly typeof networks.bitcoin[];
+const NETWORKS_LIST = Object.values(networks) as readonly (typeof networks.bitcoin)[];
+
+function defined<T>(value: T | undefined | null): T {
+    if (value == null) throw new Error('expected defined value');
+    return value;
+}
 
 function mockBackend(
     base: CryptoBackend,
@@ -111,8 +112,7 @@ function mockBackend(
             mock[key] = overrides[key];
         } else {
             const val = base[key];
-            mock[key] =
-                typeof val === 'function' ? val.bind(base) : val;
+            mock[key] = typeof val === 'function' ? val.bind(base) : val;
         }
     }
     return mock as unknown as CryptoBackend;
@@ -125,15 +125,11 @@ function mockBackend(
 describe('types', () => {
     describe('fromHexInternal', () => {
         it('decodes valid hex', () => {
-            expect(fromHexInternal('deadbeef')).toEqual(
-                new Uint8Array([0xde, 0xad, 0xbe, 0xef]),
-            );
+            expect(fromHexInternal('deadbeef')).toEqual(new Uint8Array([0xde, 0xad, 0xbe, 0xef]));
         });
 
         it('decodes uppercase hex', () => {
-            expect(fromHexInternal('DEADBEEF')).toEqual(
-                new Uint8Array([0xde, 0xad, 0xbe, 0xef]),
-            );
+            expect(fromHexInternal('DEADBEEF')).toEqual(new Uint8Array([0xde, 0xad, 0xbe, 0xef]));
         });
 
         it('decodes empty string', () => {
@@ -201,9 +197,7 @@ describe('types', () => {
 
     describe('toHex', () => {
         it('converts bytes to hex', () => {
-            expect(toHex(new Uint8Array([0xde, 0xad, 0xbe, 0xef]))).toBe(
-                'deadbeef',
-            );
+            expect(toHex(new Uint8Array([0xde, 0xad, 0xbe, 0xef]))).toBe('deadbeef');
         });
 
         it('pads single digits', () => {
@@ -235,15 +229,11 @@ describe('types', () => {
 
     describe('constants', () => {
         it('EC_N is the secp256k1 curve order', () => {
-            expect(EC_N).toBe(
-                0xfffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141n,
-            );
+            expect(EC_N).toBe(0xfffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141n);
         });
 
         it('EC_P is the secp256k1 field prime', () => {
-            expect(EC_P).toBe(
-                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffefffffc2fn,
-            );
+            expect(EC_P).toBe(0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffefffffc2fn);
         });
 
         it('SATOSHI_MAX is 21 million BTC in sats', () => {
@@ -300,9 +290,7 @@ describe('types', () => {
             it('rejects n+1', () => {
                 expect(
                     isPrivateKey(
-                        h(
-                            'fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364142',
-                        ),
+                        h('fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364142'),
                     ),
                 ).toBe(false);
             });
@@ -320,9 +308,7 @@ describe('types', () => {
             it('accepts compressed 02 prefix', () => {
                 expect(
                     isPublicKey(
-                        h(
-                            '0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798',
-                        ),
+                        h('0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798'),
                     ),
                 ).toBe(true);
             });
@@ -330,9 +316,7 @@ describe('types', () => {
             it('accepts compressed 03 prefix', () => {
                 expect(
                     isPublicKey(
-                        h(
-                            '0379be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798',
-                        ),
+                        h('0379be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798'),
                     ),
                 ).toBe(true);
             });
@@ -480,9 +464,7 @@ describe('types', () => {
             });
 
             it('throws for non-Uint8Array', () => {
-                expect(() => assertBytes32('string')).toThrow(
-                    'expected Uint8Array',
-                );
+                expect(() => assertBytes32('string')).toThrow('expected Uint8Array');
             });
 
             it('throws for wrong length', () => {
@@ -512,9 +494,7 @@ describe('types', () => {
             });
 
             it('throws for key >= n', () => {
-                expect(() => assertPrivateKey(GROUP_ORDER)).toThrow(
-                    'key not in range',
-                );
+                expect(() => assertPrivateKey(GROUP_ORDER)).toThrow('key not in range');
             });
         });
 
@@ -522,17 +502,13 @@ describe('types', () => {
             it('passes for valid compressed key', () => {
                 expect(() =>
                     assertPublicKey(
-                        h(
-                            '0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798',
-                        ),
+                        h('0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798'),
                     ),
                 ).not.toThrow();
             });
 
             it('throws for non-Uint8Array', () => {
-                expect(() => assertPublicKey('string')).toThrow(
-                    'expected Uint8Array',
-                );
+                expect(() => assertPublicKey('string')).toThrow('expected Uint8Array');
             });
 
             it('throws for invalid format', () => {
@@ -542,9 +518,7 @@ describe('types', () => {
             });
 
             it('throws for empty Uint8Array', () => {
-                expect(() => assertPublicKey(new Uint8Array(0))).toThrow(
-                    'invalid SEC1 public key',
-                );
+                expect(() => assertPublicKey(new Uint8Array(0))).toThrow('invalid SEC1 public key');
             });
         });
 
@@ -554,15 +528,11 @@ describe('types', () => {
             });
 
             it('throws for non-Uint8Array', () => {
-                expect(() => assertXOnlyPublicKey('string')).toThrow(
-                    'expected Uint8Array',
-                );
+                expect(() => assertXOnlyPublicKey('string')).toThrow('expected Uint8Array');
             });
 
             it('throws for wrong length', () => {
-                expect(() =>
-                    assertXOnlyPublicKey(new Uint8Array(16)),
-                ).toThrow('expected 32 bytes');
+                expect(() => assertXOnlyPublicKey(new Uint8Array(16))).toThrow('expected 32 bytes');
             });
 
             it('throws for zero key', () => {
@@ -572,21 +542,15 @@ describe('types', () => {
 
         describe('assertMessageHash', () => {
             it('passes for valid hash', () => {
-                expect(() =>
-                    assertMessageHash(new Uint8Array(32)),
-                ).not.toThrow();
+                expect(() => assertMessageHash(new Uint8Array(32))).not.toThrow();
             });
 
             it('throws for non-Uint8Array', () => {
-                expect(() => assertMessageHash(null)).toThrow(
-                    'expected Uint8Array',
-                );
+                expect(() => assertMessageHash(null)).toThrow('expected Uint8Array');
             });
 
             it('throws for wrong length', () => {
-                expect(() => assertMessageHash(new Uint8Array(16))).toThrow(
-                    'expected 32 bytes',
-                );
+                expect(() => assertMessageHash(new Uint8Array(16))).toThrow('expected 32 bytes');
             });
         });
     });
@@ -607,15 +571,13 @@ describe('types', () => {
         });
 
         it('createBytes20 rejects wrong length', () => {
-            expect(() => createBytes20(new Uint8Array(32))).toThrow(
-                'expected 20 bytes',
-            );
+            expect(() => createBytes20(new Uint8Array(32))).toThrow('expected 20 bytes');
         });
 
         it('createBytes20 rejects non-Uint8Array', () => {
-            expect(() =>
-                createBytes20('string' as unknown as Uint8Array),
-            ).toThrow('expected 20 bytes');
+            expect(() => createBytes20('string' as unknown as Uint8Array)).toThrow(
+                'expected 20 bytes',
+            );
         });
 
         it('createPrivateKey accepts valid key', () => {
@@ -628,9 +590,7 @@ describe('types', () => {
         });
 
         it('createPublicKey accepts valid key', () => {
-            const pub = h(
-                '0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798',
-            );
+            const pub = h('0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798');
             expect(createPublicKey(pub).length).toBe(33);
         });
 
@@ -651,9 +611,7 @@ describe('types', () => {
         });
 
         it('createSignature rejects out of range', () => {
-            expect(() => createSignature(new Uint8Array(7))).toThrow(
-                'expected 8-73 bytes',
-            );
+            expect(() => createSignature(new Uint8Array(7))).toThrow('expected 8-73 bytes');
         });
 
         it('createSchnorrSignature accepts 64 bytes', () => {
@@ -661,9 +619,7 @@ describe('types', () => {
         });
 
         it('createSchnorrSignature rejects wrong length', () => {
-            expect(() => createSchnorrSignature(new Uint8Array(63))).toThrow(
-                'expected 64 bytes',
-            );
+            expect(() => createSchnorrSignature(new Uint8Array(63))).toThrow('expected 64 bytes');
         });
 
         it('createMessageHash accepts 32 bytes', () => {
@@ -782,9 +738,7 @@ describe('NobleBackend', () => {
         it('accepts generator point', () => {
             expect(
                 backend.isPoint(
-                    h(
-                        '0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798',
-                    ),
+                    h('0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798'),
                 ),
             ).toBe(true);
         });
@@ -792,9 +746,7 @@ describe('NobleBackend', () => {
         it('rejects invalid point', () => {
             expect(
                 backend.isPoint(
-                    h(
-                        '030000000000000000000000000000000000000000000000000000000000000005',
-                    ),
+                    h('030000000000000000000000000000000000000000000000000000000000000005'),
                 ),
             ).toBe(false);
         });
@@ -806,18 +758,16 @@ describe('NobleBackend', () => {
 
     describe('pointFromScalar', () => {
         it('derives known public key', () => {
-            const pub = backend.pointFromScalar(createPrivateKey(ONE), true);
-            expect(pub).not.toBeNull();
-            expect(toHex(pub!)).toBe(
+            const pub = defined(backend.pointFromScalar(createPrivateKey(ONE), true));
+            expect(toHex(pub)).toBe(
                 '0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798',
             );
         });
 
         it('derives uncompressed public key', () => {
-            const pub = backend.pointFromScalar(createPrivateKey(ONE), false);
-            expect(pub).not.toBeNull();
-            expect(pub!.length).toBe(65);
-            expect(pub![0]).toBe(0x04);
+            const pub = defined(backend.pointFromScalar(createPrivateKey(ONE), false));
+            expect(pub.length).toBe(65);
+            expect(pub[0]).toBe(0x04);
         });
 
         it('returns null for invalid scalar', () => {
@@ -835,18 +785,11 @@ describe('NobleBackend', () => {
         ) as PublicKey;
 
         it('compresses uncompressed key', () => {
-            expect(
-                bytesEqual(backend.pointCompress(uncompressed, true), compressed),
-            ).toBe(true);
+            expect(bytesEqual(backend.pointCompress(uncompressed, true), compressed)).toBe(true);
         });
 
         it('decompresses compressed key', () => {
-            expect(
-                bytesEqual(
-                    backend.pointCompress(compressed, false),
-                    uncompressed,
-                ),
-            ).toBe(true);
+            expect(bytesEqual(backend.pointCompress(compressed, false), uncompressed)).toBe(true);
         });
 
         it('defaults to compressed when no flag provided', () => {
@@ -862,23 +805,18 @@ describe('NobleBackend', () => {
         ) as PublicKey;
 
         it('adds a non-zero tweak', () => {
-            const result = backend.pointAddScalar(pub, ONE as Bytes32);
-            expect(result).not.toBeNull();
-            expect(result!.length).toBe(33);
+            const result = defined(backend.pointAddScalar(pub, ONE as Bytes32));
+            expect(result.length).toBe(33);
         });
 
         it('handles zero tweak (identity)', () => {
-            const result = backend.pointAddScalar(pub, ZERO as Bytes32);
-            expect(result).not.toBeNull();
-            expect(bytesEqual(result!, pub)).toBe(true);
+            const result = defined(backend.pointAddScalar(pub, ZERO as Bytes32));
+            expect(bytesEqual(result, pub)).toBe(true);
         });
 
         it('returns null for invalid tweak that results in point at infinity', () => {
             // n-1 as tweak for generator point should negate it, adding to itself gives infinity
-            const result = backend.pointAddScalar(
-                pub,
-                GROUP_ORDER_LESS_1 as Bytes32,
-            );
+            const result = backend.pointAddScalar(pub, GROUP_ORDER_LESS_1 as Bytes32);
             expect(result).toBeNull();
         });
     });
@@ -889,51 +827,35 @@ describe('NobleBackend', () => {
         ) as XOnlyPublicKey;
 
         it('returns result with parity', () => {
-            const result = backend.xOnlyPointAddTweak(xOnly, ONE as Bytes32);
-            expect(result).not.toBeNull();
-            expect(result!.xOnlyPubkey.length).toBe(32);
-            expect([0, 1]).toContain(result!.parity);
+            const result = defined(backend.xOnlyPointAddTweak(xOnly, ONE as Bytes32));
+            expect(result.xOnlyPubkey.length).toBe(32);
+            expect([0, 1]).toContain(result.parity);
         });
 
         it('returns null when tweak >= N', () => {
-            const result = backend.xOnlyPointAddTweak(
-                xOnly,
-                GROUP_ORDER as Bytes32,
-            );
+            const result = backend.xOnlyPointAddTweak(xOnly, GROUP_ORDER as Bytes32);
             expect(result).toBeNull();
         });
 
         it('returns null for infinity result', () => {
-            const result = backend.xOnlyPointAddTweak(
-                xOnly,
-                GROUP_ORDER_LESS_1 as Bytes32,
-            );
+            const result = backend.xOnlyPointAddTweak(xOnly, GROUP_ORDER_LESS_1 as Bytes32);
             expect(result).toBeNull();
         });
     });
 
     describe('privateAdd', () => {
         it('adds two scalars', () => {
-            const result = backend.privateAdd(
-                createPrivateKey(ONE),
-                ONE as Bytes32,
-            );
-            expect(result).not.toBeNull();
+            const result = backend.privateAdd(createPrivateKey(ONE), ONE as Bytes32);
             expect(
                 bytesEqual(
-                    result!,
-                    h(
-                        '0000000000000000000000000000000000000000000000000000000000000002',
-                    ),
+                    defined(result),
+                    h('0000000000000000000000000000000000000000000000000000000000000002'),
                 ),
             ).toBe(true);
         });
 
         it('returns null when result is zero mod n', () => {
-            const result = backend.privateAdd(
-                createPrivateKey(ONE),
-                GROUP_ORDER_LESS_1 as Bytes32,
-            );
+            const result = backend.privateAdd(createPrivateKey(ONE), GROUP_ORDER_LESS_1 as Bytes32);
             expect(result).toBeNull();
         });
     });
@@ -945,9 +867,7 @@ describe('NobleBackend', () => {
         });
 
         it('negates n-1 to 1', () => {
-            const result = backend.privateNegate(
-                createPrivateKey(GROUP_ORDER_LESS_1),
-            );
+            const result = backend.privateNegate(createPrivateKey(GROUP_ORDER_LESS_1));
             expect(bytesEqual(result, ONE)).toBe(true);
         });
     });
@@ -955,9 +875,7 @@ describe('NobleBackend', () => {
     describe('sign and verify', () => {
         const privKey = createPrivateKey(ONE);
         const msgHash = createMessageHash(
-            h(
-                '5e9f0a0d593efdcf78ac923bc3313e4e7d408d574354ee2b3288c0da9fbba6ed',
-            ),
+            h('5e9f0a0d593efdcf78ac923bc3313e4e7d408d574354ee2b3288c0da9fbba6ed'),
         );
 
         it('produces a 64-byte signature', () => {
@@ -971,13 +889,13 @@ describe('NobleBackend', () => {
         });
 
         it('verify accepts valid signature', () => {
-            const pub = backend.pointFromScalar(privKey, true)!;
+            const pub = defined(backend.pointFromScalar(privKey, true));
             const sig = backend.sign(msgHash, privKey);
             expect(backend.verify(msgHash, pub, sig)).toBe(true);
         });
 
         it('verify rejects invalid signature', () => {
-            const pub = backend.pointFromScalar(privKey, true)!;
+            const pub = defined(backend.pointFromScalar(privKey, true));
             const badSig = new Uint8Array(64).fill(0xff) as Signature;
             expect(backend.verify(msgHash, pub, badSig)).toBe(false);
         });
@@ -993,22 +911,17 @@ describe('NobleBackend', () => {
         });
 
         it('signSchnorr with extraEntropy', () => {
-            const sig = backend.signSchnorr(
-                msgHash,
-                privKey,
-                new Uint8Array(32),
-            );
+            const sig = backend.signSchnorr(msgHash, privKey, new Uint8Array(32));
             expect(sig.length).toBe(64);
         });
 
         it('verifySchnorr accepts valid signature', () => {
             const sig = backend.signSchnorr(msgHash, privKey);
-            const pub = backend.pointFromScalar(privKey, true)!;
+            const pub = defined(backend.pointFromScalar(privKey, true));
             const xOnly = pub.subarray(1, 33) as XOnlyPublicKey;
             expect(backend.verifySchnorr(msgHash, xOnly, sig)).toBe(true);
         });
     });
-
 });
 
 // ---------------------------------------------------------------------------
@@ -1016,9 +929,7 @@ describe('NobleBackend', () => {
 // ---------------------------------------------------------------------------
 
 describe('LegacyBackend', () => {
-    const backend = createLegacyBackend(
-        tinysecp as unknown as TinySecp256k1Interface,
-    );
+    const backend = createLegacyBackend(tinysecp as unknown as TinySecp256k1Interface);
 
     it('createLegacyBackend returns a LegacyBackend instance', () => {
         expect(backend).toBeInstanceOf(LegacyBackend);
@@ -1035,9 +946,7 @@ describe('LegacyBackend', () => {
         it('delegates to tinysecp', () => {
             expect(
                 backend.isPoint(
-                    h(
-                        '0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798',
-                    ),
+                    h('0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798'),
                 ),
             ).toBe(true);
             expect(backend.isPoint(new Uint8Array(33))).toBe(false);
@@ -1046,9 +955,8 @@ describe('LegacyBackend', () => {
 
     describe('pointFromScalar', () => {
         it('derives public key', () => {
-            const pub = backend.pointFromScalar(createPrivateKey(ONE), true);
-            expect(pub).not.toBeNull();
-            expect(pub!.length).toBe(33);
+            const pub = defined(backend.pointFromScalar(createPrivateKey(ONE), true));
+            expect(pub.length).toBe(33);
         });
     });
 
@@ -1079,9 +987,9 @@ describe('LegacyBackend', () => {
             const pub = h(
                 '0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798',
             ) as PublicKey;
-            expect(() =>
-                noAddBackend.pointAddScalar(pub, ONE as Bytes32),
-            ).toThrow('pointAddScalar not supported');
+            expect(() => noAddBackend.pointAddScalar(pub, ONE as Bytes32)).toThrow(
+                'pointAddScalar not supported',
+            );
         });
     });
 
@@ -1090,29 +998,22 @@ describe('LegacyBackend', () => {
             const xOnly = h(
                 '79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798',
             ) as XOnlyPublicKey;
-            const result = backend.xOnlyPointAddTweak(xOnly, ONE as Bytes32);
-            expect(result).not.toBeNull();
-            expect(result!.xOnlyPubkey.length).toBe(32);
+            const result = defined(backend.xOnlyPointAddTweak(xOnly, ONE as Bytes32));
+            expect(result.xOnlyPubkey.length).toBe(32);
         });
 
         it('returns null on failure', () => {
             const xOnly = h(
                 '79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798',
             ) as XOnlyPublicKey;
-            const result = backend.xOnlyPointAddTweak(
-                xOnly,
-                GROUP_ORDER_LESS_1 as Bytes32,
-            );
+            const result = backend.xOnlyPointAddTweak(xOnly, GROUP_ORDER_LESS_1 as Bytes32);
             expect(result).toBeNull();
         });
     });
 
     describe('privateAdd and privateNegate', () => {
         it('adds scalars', () => {
-            const result = backend.privateAdd(
-                createPrivateKey(ONE),
-                ONE as Bytes32,
-            );
+            const result = backend.privateAdd(createPrivateKey(ONE), ONE as Bytes32);
             expect(result).not.toBeNull();
         });
 
@@ -1128,7 +1029,7 @@ describe('LegacyBackend', () => {
 
         it('signs and verifies', () => {
             const sig = backend.sign(msgHash, privKey);
-            const pub = backend.pointFromScalar(privKey, true)!;
+            const pub = defined(backend.pointFromScalar(privKey, true));
             expect(backend.verify(msgHash, pub, sig)).toBe(true);
         });
     });
@@ -1144,7 +1045,7 @@ describe('LegacyBackend', () => {
 
         it('verifies Schnorr', () => {
             const sig = backend.signSchnorr(msgHash, privKey);
-            const pub = backend.pointFromScalar(privKey, true)!;
+            const pub = defined(backend.pointFromScalar(privKey, true));
             const xOnly = pub.subarray(1, 33) as XOnlyPublicKey;
             expect(backend.verifySchnorr(msgHash, xOnly, sig)).toBe(true);
         });
@@ -1154,9 +1055,9 @@ describe('LegacyBackend', () => {
                 ...tinysecp,
                 signSchnorr: undefined,
             } as unknown as TinySecp256k1Interface);
-            expect(() =>
-                noSchnorrBackend.signSchnorr(msgHash, privKey),
-            ).toThrow('signSchnorr not supported');
+            expect(() => noSchnorrBackend.signSchnorr(msgHash, privKey)).toThrow(
+                'signSchnorr not supported',
+            );
         });
 
         it('throws verifySchnorr when not supported', () => {
@@ -1204,11 +1105,7 @@ describe('verifyCryptoBackend', () => {
 
     it('passes with LegacyBackend', () => {
         expect(() =>
-            verifyCryptoBackend(
-                createLegacyBackend(
-                    tinysecp as unknown as TinySecp256k1Interface,
-                ),
-            ),
+            verifyCryptoBackend(createLegacyBackend(tinysecp as unknown as TinySecp256k1Interface)),
         ).not.toThrow();
     });
 
@@ -1216,9 +1113,7 @@ describe('verifyCryptoBackend', () => {
         const broken = mockBackend(createNobleBackend(), {
             isPoint: () => false,
         });
-        expect(() => verifyCryptoBackend(broken)).toThrow(
-            'verifyCryptoBackend',
-        );
+        expect(() => verifyCryptoBackend(broken)).toThrow('verifyCryptoBackend');
     });
 
     it('throws on broken isPrivate', () => {
@@ -1226,9 +1121,7 @@ describe('verifyCryptoBackend', () => {
         const broken = mockBackend(noble, {
             isPrivate: () => false,
         });
-        expect(() => verifyCryptoBackend(broken)).toThrow(
-            'verifyCryptoBackend',
-        );
+        expect(() => verifyCryptoBackend(broken)).toThrow('verifyCryptoBackend');
     });
 
     it('passes with backend without signSchnorr', () => {
@@ -1255,25 +1148,13 @@ describe('verifyCryptoBackend', () => {
 describe('WIF', () => {
     describe('encodeWIF', () => {
         it('encodes compressed mainnet key', () => {
-            const wifStr = encodeWIF(
-                createPrivateKey(ONE),
-                true,
-                networks.bitcoin,
-            );
-            expect(wifStr).toBe(
-                'KwDiBf89QgGbjEhKnhXJuH7LrciVrZi3qYjgd9M7rFU73sVHnoWn',
-            );
+            const wifStr = encodeWIF(createPrivateKey(ONE), true, networks.bitcoin);
+            expect(wifStr).toBe('KwDiBf89QgGbjEhKnhXJuH7LrciVrZi3qYjgd9M7rFU73sVHnoWn');
         });
 
         it('encodes uncompressed mainnet key', () => {
-            const wifStr = encodeWIF(
-                createPrivateKey(ONE),
-                false,
-                networks.bitcoin,
-            );
-            expect(wifStr).toBe(
-                '5HpHagT65TZzG1PH3CSu63k8DbpvD8s5ip4nEB3kEsreAnchuDf',
-            );
+            const wifStr = encodeWIF(createPrivateKey(ONE), false, networks.bitcoin);
+            expect(wifStr).toBe('5HpHagT65TZzG1PH3CSu63k8DbpvD8s5ip4nEB3kEsreAnchuDf');
         });
     });
 
@@ -1299,10 +1180,7 @@ describe('WIF', () => {
 
         it('throws on invalid network version', () => {
             expect(() =>
-                decodeWIF(
-                    '92Qba5hnyWSn5Ffcka56yMQauaWY6ZLd91Vzxbi4a9CCetaHtYj',
-                    networks.bitcoin,
-                ),
+                decodeWIF('92Qba5hnyWSn5Ffcka56yMQauaWY6ZLd91Vzxbi4a9CCetaHtYj', networks.bitcoin),
             ).toThrow('Invalid network version');
         });
 
@@ -1319,10 +1197,7 @@ describe('WIF', () => {
 // ---------------------------------------------------------------------------
 
 const backendEntries: [string, CryptoBackend][] = [
-    [
-        'LegacyBackend',
-        createLegacyBackend(tinysecp as unknown as TinySecp256k1Interface),
-    ],
+    ['LegacyBackend', createLegacyBackend(tinysecp as unknown as TinySecp256k1Interface)],
     ['NobleBackend', createNobleBackend()],
 ];
 
@@ -1368,9 +1243,9 @@ for (const [backendName, backend] of backendEntries) {
 
             fixtures.valid.forEach((f) => {
                 it(`derives public key for ${f.WIF}`, () => {
-                    const network = (
-                        networks as Record<string, typeof networks.bitcoin>
-                    )[f.network]!;
+                    const network = defined(
+                        (networks as Record<string, typeof networks.bitcoin>)[f.network],
+                    );
                     const kp = ECPairSigner.fromPrivateKey(
                         backend,
                         createPrivateKey(h(f.d)),
@@ -1384,9 +1259,7 @@ for (const [backendName, backend] of backendEntries) {
             fixtures.invalid.fromPrivateKey.forEach((f) => {
                 it(`throws ${f.exception}`, () => {
                     const rec = f as Record<string, unknown>;
-                    const opts = rec['options'] as
-                        | Record<string, unknown>
-                        | undefined;
+                    const opts = rec['options'] as Record<string, unknown> | undefined;
                     expect(() =>
                         ECPairSigner.fromPrivateKey(
                             backend,
@@ -1401,9 +1274,7 @@ for (const [backendName, backend] of backendEntries) {
 
         describe('fromPublicKey', () => {
             it('creates public-key-only signer', () => {
-                const pub = h(
-                    '0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798',
-                );
+                const pub = h('0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798');
                 const kp = ECPairSigner.fromPublicKey(
                     backend,
                     createPublicKey(pub),
@@ -1433,11 +1304,7 @@ for (const [backendName, backend] of backendEntries) {
                 it(`throws ${f.exception}`, () => {
                     const Q = f.Q ? h(f.Q) : new Uint8Array(0);
                     expect(() =>
-                        ECPairSigner.fromPublicKey(
-                            backend,
-                            Q as PublicKey,
-                            networks.bitcoin,
-                        ),
+                        ECPairSigner.fromPublicKey(backend, Q as PublicKey, networks.bitcoin),
                     ).toThrow(new RegExp(f.exception));
                 });
             });
@@ -1446,12 +1313,12 @@ for (const [backendName, backend] of backendEntries) {
         describe('fromWIF', () => {
             fixtures.valid.forEach((f) => {
                 it(`imports ${f.WIF} (${f.network})`, () => {
-                    const network = (
-                        networks as Record<string, typeof networks.bitcoin>
-                    )[f.network]!;
+                    const network = defined(
+                        (networks as Record<string, typeof networks.bitcoin>)[f.network],
+                    );
                     const kp = ECPairSigner.fromWIF(backend, f.WIF, network);
 
-                    expect(toHex(kp.privateKey!)).toBe(f.d);
+                    expect(toHex(defined(kp.privateKey))).toBe(f.d);
                     expect(kp.compressed).toBe(f.compressed);
                     expect(kp.network).toBe(network);
                 });
@@ -1459,20 +1326,11 @@ for (const [backendName, backend] of backendEntries) {
 
             fixtures.valid.forEach((f) => {
                 it(`imports ${f.WIF} (via network list)`, () => {
-                    const kp = ECPairSigner.fromWIF(
-                        backend,
-                        f.WIF,
-                        NETWORKS_LIST,
-                    );
-                    expect(toHex(kp.privateKey!)).toBe(f.d);
+                    const kp = ECPairSigner.fromWIF(backend, f.WIF, NETWORKS_LIST);
+                    expect(toHex(defined(kp.privateKey))).toBe(f.d);
                     expect(kp.compressed).toBe(f.compressed);
                     expect(kp.network).toBe(
-                        (
-                            networks as Record<
-                                string,
-                                typeof networks.bitcoin
-                            >
-                        )[f.network],
+                        (networks as Record<string, typeof networks.bitcoin>)[f.network],
                     );
                 });
             });
@@ -1481,12 +1339,11 @@ for (const [backendName, backend] of backendEntries) {
                 it(`throws on ${f.WIF}`, () => {
                     expect(() => {
                         const net = (f as { network?: string }).network
-                            ? (
-                                  networks as Record<
-                                      string,
-                                      typeof networks.bitcoin
-                                  >
-                              )[(f as { network: string }).network]!
+                            ? defined(
+                                  (networks as Record<string, typeof networks.bitcoin>)[
+                                      (f as { network: string }).network
+                                  ],
+                              )
                             : NETWORKS_LIST;
                         ECPairSigner.fromWIF(backend, f.WIF, net);
                     }).toThrow(new RegExp(f.exception));
@@ -1497,19 +1354,13 @@ for (const [backendName, backend] of backendEntries) {
         describe('toWIF', () => {
             fixtures.valid.forEach((f) => {
                 it(`exports ${f.WIF}`, () => {
-                    const kp = ECPairSigner.fromWIF(
-                        backend,
-                        f.WIF,
-                        NETWORKS_LIST,
-                    );
+                    const kp = ECPairSigner.fromWIF(backend, f.WIF, NETWORKS_LIST);
                     expect(kp.toWIF()).toBe(f.WIF);
                 });
             });
 
             it('throws if no private key (public-key-only signer)', () => {
-                const pub = h(
-                    '0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798',
-                );
+                const pub = h('0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798');
                 const kp = ECPairSigner.fromPublicKey(
                     backend,
                     createPublicKey(pub),
@@ -1534,15 +1385,15 @@ for (const [backendName, backend] of backendEntries) {
                     rng: () => seed,
                 });
                 expect(kp.privateKey).toBeDefined();
-                expect(kp.privateKey!.length).toBe(32);
-                expect(backend.isPrivate(kp.privateKey!)).toBe(true);
+                expect(defined(kp.privateKey).length).toBe(32);
+                expect(backend.isPrivate(defined(kp.privateKey))).toBe(true);
             });
 
             it('produces deterministic output from fixed seed', () => {
                 const seed = new Uint8Array(48).fill(4);
                 const kp1 = ECPairSigner.makeRandom(backend, networks.bitcoin, { rng: () => seed });
                 const kp2 = ECPairSigner.makeRandom(backend, networks.bitcoin, { rng: () => seed });
-                expect(bytesEqual(kp1.privateKey!, kp2.privateKey!)).toBe(true);
+                expect(bytesEqual(defined(kp1.privateKey), defined(kp2.privateKey))).toBe(true);
             });
 
             it('supports options', () => {
@@ -1565,7 +1416,7 @@ for (const [backendName, backend] of backendEntries) {
                 // 0 mod (n-1) + 1 = 1
                 const seed = new Uint8Array(48);
                 const kp = ECPairSigner.makeRandom(backend, networks.bitcoin, { rng: () => seed });
-                expect(bytesEqual(kp.privateKey!, ONE)).toBe(true);
+                expect(bytesEqual(defined(kp.privateKey), ONE)).toBe(true);
             });
 
             it('reduces 48-byte seed via FIPS mod (n-1) + 1', () => {
@@ -1573,15 +1424,17 @@ for (const [backendName, backend] of backendEntries) {
                 // (n-1) mod (n-1) + 1 = 0 + 1 = 1
                 const nMinus1Padded = new Uint8Array(48);
                 nMinus1Padded.set(GROUP_ORDER_LESS_1, 48 - 32);
-                const kp = ECPairSigner.makeRandom(backend, networks.bitcoin, { rng: () => nMinus1Padded });
-                expect(bytesEqual(kp.privateKey!, ONE)).toBe(true);
+                const kp = ECPairSigner.makeRandom(backend, networks.bitcoin, {
+                    rng: () => nMinus1Padded,
+                });
+                expect(bytesEqual(defined(kp.privateKey), ONE)).toBe(true);
             });
 
             it('never produces zero from any seed', () => {
                 // Verify the +1 offset prevents zero: seed=0 → key=1
                 const seed = new Uint8Array(48);
                 const kp = ECPairSigner.makeRandom(backend, networks.bitcoin, { rng: () => seed });
-                expect(isPrivateKey(kp.privateKey!)).toBe(true);
+                expect(isPrivateKey(defined(kp.privateKey))).toBe(true);
             });
 
             it('uses crypto.getRandomValues as default rng', () => {
@@ -1603,9 +1456,7 @@ for (const [backendName, backend] of backendEntries) {
             });
 
             it('returns pre-set public key for public-only signer', () => {
-                const pub = h(
-                    '0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798',
-                );
+                const pub = h('0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798');
                 const kp = ECPairSigner.fromPublicKey(
                     backend,
                     createPublicKey(pub),
@@ -1660,21 +1511,11 @@ for (const [backendName, backend] of backendEntries) {
                     networks.bitcoin,
                 );
                 expect(kp.hasCapability(SignerCapability.EcdsaSign)).toBe(true);
-                expect(kp.hasCapability(SignerCapability.EcdsaVerify)).toBe(
-                    true,
-                );
-                expect(kp.hasCapability(SignerCapability.PrivateKeyExport)).toBe(
-                    true,
-                );
-                expect(kp.hasCapability(SignerCapability.PublicKeyTweak)).toBe(
-                    true,
-                );
-                expect(kp.hasCapability(SignerCapability.SchnorrSign)).toBe(
-                    true,
-                );
-                expect(kp.hasCapability(SignerCapability.SchnorrVerify)).toBe(
-                    true,
-                );
+                expect(kp.hasCapability(SignerCapability.EcdsaVerify)).toBe(true);
+                expect(kp.hasCapability(SignerCapability.PrivateKeyExport)).toBe(true);
+                expect(kp.hasCapability(SignerCapability.PublicKeyTweak)).toBe(true);
+                expect(kp.hasCapability(SignerCapability.SchnorrSign)).toBe(true);
+                expect(kp.hasCapability(SignerCapability.SchnorrVerify)).toBe(true);
             });
 
             it('capabilities is a bitmask number', () => {
@@ -1687,26 +1528,16 @@ for (const [backendName, backend] of backendEntries) {
             });
 
             it('public-key-only signer has limited capabilities', () => {
-                const pub = h(
-                    '0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798',
-                );
+                const pub = h('0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798');
                 const kp = ECPairSigner.fromPublicKey(
                     backend,
                     createPublicKey(pub),
                     networks.bitcoin,
                 );
-                expect(kp.hasCapability(SignerCapability.EcdsaSign)).toBe(
-                    false,
-                );
-                expect(kp.hasCapability(SignerCapability.EcdsaVerify)).toBe(
-                    true,
-                );
-                expect(kp.hasCapability(SignerCapability.PrivateKeyExport)).toBe(
-                    false,
-                );
-                expect(kp.hasCapability(SignerCapability.SchnorrSign)).toBe(
-                    false,
-                );
+                expect(kp.hasCapability(SignerCapability.EcdsaSign)).toBe(false);
+                expect(kp.hasCapability(SignerCapability.EcdsaVerify)).toBe(true);
+                expect(kp.hasCapability(SignerCapability.PrivateKeyExport)).toBe(false);
+                expect(kp.hasCapability(SignerCapability.SchnorrSign)).toBe(false);
             });
 
             it('capabilities are memoized', () => {
@@ -1729,9 +1560,7 @@ for (const [backendName, backend] of backendEntries) {
                     createPrivateKey(ONE),
                     networks.bitcoin,
                 );
-                expect(kp.hasCapability(SignerCapability.SchnorrSign)).toBe(
-                    false,
-                );
+                expect(kp.hasCapability(SignerCapability.SchnorrSign)).toBe(false);
             });
 
             it('no SchnorrVerify without backend verifySchnorr', () => {
@@ -1743,9 +1572,7 @@ for (const [backendName, backend] of backendEntries) {
                     createPrivateKey(ONE),
                     networks.bitcoin,
                 );
-                expect(kp.hasCapability(SignerCapability.SchnorrVerify)).toBe(
-                    false,
-                );
+                expect(kp.hasCapability(SignerCapability.SchnorrVerify)).toBe(false);
             });
 
             it('HdDerivation is not set', () => {
@@ -1754,9 +1581,7 @@ for (const [backendName, backend] of backendEntries) {
                     createPrivateKey(ONE),
                     networks.bitcoin,
                 );
-                expect(kp.hasCapability(SignerCapability.HdDerivation)).toBe(
-                    false,
-                );
+                expect(kp.hasCapability(SignerCapability.HdDerivation)).toBe(false);
             });
         });
 
@@ -1781,13 +1606,11 @@ for (const [backendName, backend] of backendEntries) {
                 const kp = ECPairSigner.fromPrivateKey(backend, privKey, networks.bitcoin);
                 const sig = kp.sign(msgHash, true);
                 // First byte of R should be <= 0x7f
-                expect(sig[0]! <= 0x7f).toBe(true);
+                expect(defined(sig[0]) <= 0x7f).toBe(true);
             });
 
             it('throws if no private key', () => {
-                const pub = h(
-                    '0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798',
-                );
+                const pub = h('0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798');
                 const kp = ECPairSigner.fromPublicKey(
                     backend,
                     createPublicKey(pub),
@@ -1808,17 +1631,13 @@ for (const [backendName, backend] of backendEntries) {
             });
 
             it('throws if no private key', () => {
-                const pub = h(
-                    '0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798',
-                );
+                const pub = h('0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798');
                 const kp = ECPairSigner.fromPublicKey(
                     backend,
                     createPublicKey(pub),
                     networks.bitcoin,
                 );
-                expect(() => kp.signSchnorr(msgHash)).toThrow(
-                    /Missing private key/,
-                );
+                expect(() => kp.signSchnorr(msgHash)).toThrow(/Missing private key/);
             });
 
             it('throws if backend has no signSchnorr', () => {
@@ -1830,9 +1649,7 @@ for (const [backendName, backend] of backendEntries) {
                     createPrivateKey(ONE),
                     networks.bitcoin,
                 );
-                expect(() => kp.signSchnorr(msgHash)).toThrow(
-                    /signSchnorr not supported/,
-                );
+                expect(() => kp.signSchnorr(msgHash)).toThrow(/signSchnorr not supported/);
             });
         });
 
@@ -1883,45 +1700,29 @@ for (const [backendName, backend] of backendEntries) {
         describe('tweak', () => {
             fixtures.valid.forEach((f) => {
                 it(`tweaks private and public key for ${f.WIF}`, () => {
-                    const kp = ECPairSigner.fromWIF(
-                        backend,
-                        f.WIF,
-                        NETWORKS_LIST,
-                    );
+                    const kp = ECPairSigner.fromWIF(backend, f.WIF, NETWORKS_LIST);
                     const tweakHash = tapTweakHash(kp.publicKey.subarray(1, 33));
 
                     const tweakedKp = kp.tweak(tweakHash as Bytes32);
                     expect(tweakedKp.toWIF()).toBe(f.tweak);
 
                     // Also tweak from public key and compare
-                    const network = (
-                        networks as Record<
-                            string,
-                            typeof networks.bitcoin
-                        >
-                    )[f.network]!;
+                    const network = defined(
+                        (networks as Record<string, typeof networks.bitcoin>)[f.network],
+                    );
                     const pubOnlyKp = ECPairSigner.fromPublicKey(
                         backend,
                         createPublicKey(h(f.Q)),
                         network,
                         { compressed: f.compressed },
                     );
-                    const tweakedPubOnly = pubOnlyKp.tweak(
-                        tweakHash as Bytes32,
-                    );
-                    expect(
-                        bytesEqual(
-                            tweakedKp.publicKey,
-                            tweakedPubOnly.publicKey,
-                        ),
-                    ).toBe(true);
+                    const tweakedPubOnly = pubOnlyKp.tweak(tweakHash as Bytes32);
+                    expect(bytesEqual(tweakedKp.publicKey, tweakedPubOnly.publicKey)).toBe(true);
                 });
             });
 
             it('tweak from public key produces valid signer', () => {
-                const pub = h(
-                    '0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798',
-                );
+                const pub = h('0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798');
                 const kp = ECPairSigner.fromPublicKey(
                     backend,
                     createPublicKey(pub),
@@ -1942,13 +1743,11 @@ for (const [backendName, backend] of backendEntries) {
                     networks.bitcoin,
                 );
                 expect(kp.privateKey).toBeDefined();
-                expect(bytesEqual(kp.privateKey!, ONE)).toBe(true);
+                expect(bytesEqual(defined(kp.privateKey), ONE)).toBe(true);
             });
 
             it('returns undefined for public-only signer', () => {
-                const pub = h(
-                    '0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798',
-                );
+                const pub = h('0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798');
                 const kp = ECPairSigner.fromPublicKey(
                     backend,
                     createPublicKey(pub),
@@ -1981,9 +1780,7 @@ for (const [backendName, backend] of backendEntries) {
 // ---------------------------------------------------------------------------
 
 describe('ECPairSigner [LegacyBackend specific]', () => {
-    const backend = createLegacyBackend(
-        tinysecp as unknown as TinySecp256k1Interface,
-    );
+    const backend = createLegacyBackend(tinysecp as unknown as TinySecp256k1Interface);
 
     describe('optional low R signing', () => {
         const sig = h(
@@ -2002,10 +1799,7 @@ describe('ECPairSigner [LegacyBackend specific]', () => {
             networks.bitcoin,
         );
         const dataToSign = createMessageHash(
-            h(
-                'b6c5c548a7f6164c8aa7af5350901626ebd69f9ae' +
-                    '2c1ecf8871f5088ec204cfe',
-            ),
+            h('b6c5c548a7f6164c8aa7af5350901626ebd69f9ae' + '2c1ecf8871f5088ec204cfe'),
         );
 
         it('signs with normal R by default', () => {
@@ -2044,9 +1838,7 @@ describe('ECPairSigner [LegacyBackend specific]', () => {
             const schnorrsig = h(
                 '4bc68cbd7c0b769b2dff262e9971756da7ab78402ed6f710c3788ce815e9c06a011bab7a527e33c6a1df0dad5ed05a04b8f3be656d8578502fef07f8215d37db',
             );
-            expect(
-                kp.verifySchnorr(msgHash, schnorrsig as SchnorrSignature),
-            ).toBe(true);
+            expect(kp.verifySchnorr(msgHash, schnorrsig as SchnorrSignature)).toBe(true);
         });
     });
 });
@@ -2081,7 +1873,7 @@ describe('ECPairSigner edge cases', () => {
             { compressed: false },
         );
         expect(kp.publicKey[0]).toBe(0x04);
-        const yLastByte = kp.publicKey[64]!;
+        const yLastByte = defined(kp.publicKey[64]);
         // This key should have odd Y (since compressed form is 03)
         expect(yLastByte & 1).toBe(1);
 
@@ -2101,26 +1893,20 @@ describe('ECPairSigner edge cases', () => {
             createPrivateKey(ONE),
             networks.bitcoin,
         );
-        expect(() => kp.publicKey).toThrow(
-            'Failed to derive public key from private key',
-        );
+        expect(() => kp.publicKey).toThrow('Failed to derive public key from private key');
     });
 
     it('tweak from public key throws on null result', () => {
         const brokenBackend = mockBackend(noble, {
             xOnlyPointAddTweak: () => null,
         });
-        const pub = h(
-            '0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798',
-        );
+        const pub = h('0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798');
         const kp = ECPairSigner.fromPublicKey(
             brokenBackend,
             createPublicKey(pub),
             networks.bitcoin,
         );
-        expect(() => kp.tweak(ONE as Bytes32)).toThrow(
-            'Cannot tweak public key',
-        );
+        expect(() => kp.tweak(ONE as Bytes32)).toThrow('Cannot tweak public key');
     });
 
     it('tweak from private key throws on null result', () => {
@@ -2132,9 +1918,7 @@ describe('ECPairSigner edge cases', () => {
             createPrivateKey(ONE),
             networks.bitcoin,
         );
-        expect(() => kp.tweak(ONE as Bytes32)).toThrow(
-            'Invalid tweaked private key',
-        );
+        expect(() => kp.tweak(ONE as Bytes32)).toThrow('Invalid tweaked private key');
     });
 
     it('makeRandom uses crypto.getRandomValues as default rng', () => {
@@ -2146,11 +1930,7 @@ describe('ECPairSigner edge cases', () => {
     it('xOnlyPublicKey works for 32-byte input (passthrough)', () => {
         // The toXOnly function checks if length is 32, returning as-is
         // This is tested indirectly via xOnlyPublicKey getter on compressed keys
-        const kp = ECPairSigner.fromPrivateKey(
-            noble,
-            createPrivateKey(ONE),
-            networks.bitcoin,
-        );
+        const kp = ECPairSigner.fromPrivateKey(noble, createPrivateKey(ONE), networks.bitcoin);
         const xOnly = kp.xOnlyPublicKey;
         // xOnly should be the pubkey minus prefix byte
         expect(xOnly.length).toBe(32);

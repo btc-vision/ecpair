@@ -105,12 +105,10 @@ export function concatBytes(...arrays: Uint8Array[]): Uint8Array {
 }
 
 /** secp256k1 curve order `n`. */
-export const EC_N: bigint =
-    0xfffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141n;
+export const EC_N: bigint = 0xfffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141n;
 
 /** secp256k1 field prime `p`. */
-export const EC_P: bigint =
-    0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffefffffc2fn;
+export const EC_P: bigint = 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffefffffc2fn;
 
 /** Maximum satoshi value (`21_000_000 * 10^8`). */
 export const SATOSHI_MAX: bigint = 21n * 10n ** 14n;
@@ -164,11 +162,7 @@ export function isPublicKey(value: unknown): value is PublicKey {
     if (!(value instanceof Uint8Array)) return false;
     const prefix = value[0];
     if (value.length === 33 && (prefix === 0x02 || prefix === 0x03)) return true;
-    if (
-        value.length === 65 &&
-        (prefix === 0x04 || prefix === 0x06 || prefix === 0x07)
-    )
-        return true;
+    if (value.length === 65 && (prefix === 0x04 || prefix === 0x06 || prefix === 0x07)) return true;
     return false;
 }
 
@@ -241,9 +235,7 @@ export function assertPrivateKey(value: unknown): asserts value is PrivateKey {
         throw new TypeError('assertPrivateKey: expected Uint8Array');
     }
     if (value.length !== 32) {
-        throw new TypeError(
-            `assertPrivateKey: expected 32 bytes, got ${value.length} bytes`,
-        );
+        throw new TypeError(`assertPrivateKey: expected 32 bytes, got ${value.length} bytes`);
     }
     if (isZeroBytes(value)) {
         throw new TypeError('assertPrivateKey: key is zero');
@@ -278,9 +270,7 @@ export function assertXOnlyPublicKey(value: unknown): asserts value is XOnlyPubl
         throw new TypeError('assertXOnlyPublicKey: expected Uint8Array');
     }
     if (value.length !== 32) {
-        throw new TypeError(
-            `assertXOnlyPublicKey: expected 32 bytes, got ${value.length} bytes`,
-        );
+        throw new TypeError(`assertXOnlyPublicKey: expected 32 bytes, got ${value.length} bytes`);
     }
     if (isZeroBytes(value)) {
         throw new TypeError('assertXOnlyPublicKey: key is zero');
@@ -296,9 +286,7 @@ export function assertMessageHash(value: unknown): asserts value is MessageHash 
         throw new TypeError('assertMessageHash: expected Uint8Array');
     }
     if (value.length !== 32) {
-        throw new TypeError(
-            `assertMessageHash: expected 32 bytes, got ${value.length} bytes`,
-        );
+        throw new TypeError(`assertMessageHash: expected 32 bytes, got ${value.length} bytes`);
     }
 }
 
@@ -361,9 +349,7 @@ export function createXOnlyPublicKey(bytes: Uint8Array): XOnlyPublicKey {
  */
 export function createSignature(bytes: Uint8Array): Signature {
     if (!isSignature(bytes)) {
-        throw new TypeError(
-            `createSignature: expected 8-73 bytes, got ${bytes.length} bytes`,
-        );
+        throw new TypeError(`createSignature: expected 8-73 bytes, got ${bytes.length} bytes`);
     }
     return bytes;
 }
@@ -375,9 +361,7 @@ export function createSignature(bytes: Uint8Array): Signature {
  */
 export function createSchnorrSignature(bytes: Uint8Array): SchnorrSignature {
     if (!isSchnorrSignature(bytes)) {
-        throw new TypeError(
-            `createSchnorrSignature: expected 64 bytes, got ${bytes.length} bytes`,
-        );
+        throw new TypeError(`createSchnorrSignature: expected 64 bytes, got ${bytes.length} bytes`);
     }
     return bytes;
 }

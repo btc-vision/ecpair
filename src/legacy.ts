@@ -62,6 +62,16 @@ export class LegacyBackend implements CryptoBackend {
         this.#ecc = ecc;
     }
 
+    /** `true` when the underlying library supports Schnorr signing. */
+    public get hasSchnorrSign(): boolean {
+        return typeof this.#ecc.signSchnorr === 'function';
+    }
+
+    /** `true` when the underlying library supports Schnorr verification. */
+    public get hasSchnorrVerify(): boolean {
+        return typeof this.#ecc.verifySchnorr === 'function';
+    }
+
     /** @inheritDoc */
     public isPrivate(d: Uint8Array): boolean {
         return this.#ecc.isPrivate(d);
@@ -124,7 +134,11 @@ export class LegacyBackend implements CryptoBackend {
      * @inheritDoc
      * @throws If the underlying `tiny-secp256k1` library lacks `signSchnorr`.
      */
-    public signSchnorr(hash: MessageHash, privateKey: PrivateKey, extraEntropy?: Uint8Array): SchnorrSignature {
+    public signSchnorr(
+        hash: MessageHash,
+        privateKey: PrivateKey,
+        extraEntropy?: Uint8Array,
+    ): SchnorrSignature {
         if (!this.#ecc.signSchnorr) {
             throw new Error('signSchnorr not supported by ecc library');
         }
@@ -135,21 +149,15 @@ export class LegacyBackend implements CryptoBackend {
      * @inheritDoc
      * @throws If the underlying `tiny-secp256k1` library lacks `verifySchnorr`.
      */
-    public verifySchnorr(hash: MessageHash, publicKey: XOnlyPublicKey, signature: SchnorrSignature): boolean {
+    public verifySchnorr(
+        hash: MessageHash,
+        publicKey: XOnlyPublicKey,
+        signature: SchnorrSignature,
+    ): boolean {
         if (!this.#ecc.verifySchnorr) {
             throw new Error('verifySchnorr not supported by ecc library');
         }
         return this.#ecc.verifySchnorr(hash, publicKey, signature);
-    }
-
-    /** `true` when the underlying library supports Schnorr signing. */
-    public get hasSchnorrSign(): boolean {
-        return typeof this.#ecc.signSchnorr === 'function';
-    }
-
-    /** `true` when the underlying library supports Schnorr verification. */
-    public get hasSchnorrVerify(): boolean {
-        return typeof this.#ecc.verifySchnorr === 'function';
     }
 }
 

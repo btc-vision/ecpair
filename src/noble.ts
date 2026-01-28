@@ -1,4 +1,4 @@
-import { secp256k1, schnorr } from '@noble/curves/secp256k1.js';
+import { schnorr, secp256k1 } from '@noble/curves/secp256k1.js';
 import { mod } from '@noble/curves/abstract/modular.js';
 import type { CryptoBackend, Parity, XOnlyPointAddTweakResult } from './backend.js';
 import type {
@@ -141,12 +141,20 @@ export class NobleBackend implements CryptoBackend {
     }
 
     /** @inheritDoc */
-    public signSchnorr(hash: MessageHash, privateKey: PrivateKey, extraEntropy?: Uint8Array): SchnorrSignature {
+    public signSchnorr(
+        hash: MessageHash,
+        privateKey: PrivateKey,
+        extraEntropy?: Uint8Array,
+    ): SchnorrSignature {
         return schnorr.sign(hash, privateKey, extraEntropy) as SchnorrSignature;
     }
 
     /** @inheritDoc */
-    public verifySchnorr(hash: MessageHash, publicKey: XOnlyPublicKey, signature: SchnorrSignature): boolean {
+    public verifySchnorr(
+        hash: MessageHash,
+        publicKey: XOnlyPublicKey,
+        signature: SchnorrSignature,
+    ): boolean {
         return schnorr.verify(signature, hash, publicKey);
     }
 }
