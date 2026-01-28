@@ -149,11 +149,6 @@ export class NobleBackend implements CryptoBackend {
     public verifySchnorr(hash: MessageHash, publicKey: XOnlyPublicKey, signature: SchnorrSignature): boolean {
         return schnorr.verify(signature, hash, publicKey);
     }
-
-    /** @inheritDoc */
-    public generatePrivateKey(): PrivateKey {
-        return secp256k1.utils.randomSecretKey() as PrivateKey;
-    }
 }
 
 /**

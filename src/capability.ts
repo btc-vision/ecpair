@@ -1,6 +1,6 @@
 /**
  * Bitfield flags describing the cryptographic operations an
- * {@link import("./signer.js").ECPairSigner | ECPairSigner} can perform.
+ * {@link ECPairSigner} can perform.
  *
  * Combine with bitwise OR (`|`) and test with bitwise AND (`&`).
  *

@@ -31,8 +31,8 @@ export interface XOnlyPointAddTweakResult {
  *
  * Two concrete implementations ship with this package:
  *
- * - {@link import("./noble.js").NobleBackend | NobleBackend} (pure JS, `@noble/curves`)
- * - {@link import("./legacy.js").LegacyBackend | LegacyBackend} (wraps `tiny-secp256k1`)
+ * - {@link NobleBackend} (pure JS, `@noble/curves`)
+ * - {@link LegacyBackend} (wraps `tiny-secp256k1`)
  *
  * Third-party implementations must satisfy every non-optional method.
  */
@@ -116,7 +116,7 @@ export interface CryptoBackend {
      * Produces a 64-byte BIP-340 Schnorr signature.
      *
      * Optional — backends that omit this method will cause
-     * {@link import("./signer.js").ECPairSigner.signSchnorr | signSchnorr} to throw at runtime.
+     * {@link ECPairSigner.signSchnorr} to throw at runtime.
      * @param hash - 32-byte message hash.
      * @param privateKey - Signing key.
      * @param extraEntropy - Optional auxiliary randomness.
@@ -127,18 +127,10 @@ export interface CryptoBackend {
      * Verifies a 64-byte BIP-340 Schnorr signature.
      *
      * Optional — backends that omit this method will cause
-     * {@link import("./signer.js").ECPairSigner.verifySchnorr | verifySchnorr} to throw at runtime.
+     * {@link ECPairSigner.verifySchnorr} to throw at runtime.
      * @param hash - 32-byte message hash.
      * @param publicKey - 32-byte x-only public key.
      * @param signature - 64-byte Schnorr signature.
      */
     verifySchnorr?(hash: MessageHash, publicKey: XOnlyPublicKey, signature: SchnorrSignature): boolean;
-
-    /**
-     * Generates a cryptographically secure random private key.
-     *
-     * Optional — when absent, {@link import("./signer.js").ECPairSigner.makeRandom | makeRandom}
-     * falls back to `crypto.getRandomValues` or a caller-supplied RNG.
-     */
-    generatePrivateKey?(): PrivateKey;
 }

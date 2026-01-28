@@ -105,7 +105,6 @@ function mockBackend(
         'verify',
         'signSchnorr',
         'verifySchnorr',
-        'generatePrivateKey',
     ];
     for (const key of keys) {
         if (key in overrides) {
@@ -1010,13 +1009,6 @@ describe('NobleBackend', () => {
         });
     });
 
-    describe('generatePrivateKey', () => {
-        it('generates a valid private key', () => {
-            const key = backend.generatePrivateKey();
-            expect(key.length).toBe(32);
-            expect(backend.isPrivate(key)).toBe(true);
-        });
-    });
 });
 
 // ---------------------------------------------------------------------------
@@ -1537,13 +1529,20 @@ for (const [backendName, backend] of backendEntries) {
             });
 
             it('allows custom rng', () => {
-                const d = new Uint8Array(32).fill(4);
+                const seed = new Uint8Array(48).fill(4);
                 const kp = ECPairSigner.makeRandom(backend, networks.bitcoin, {
-                    rng: () => d,
+                    rng: () => seed,
                 });
-                expect(kp.toWIF()).toBe(
-                    'KwMWvwRJeFqxYyhZgNwYuYjbQENDAPAudQx5VEmKJrUZcq6aL2pv',
-                );
+                expect(kp.privateKey).toBeDefined();
+                expect(kp.privateKey!.length).toBe(32);
+                expect(backend.isPrivate(kp.privateKey!)).toBe(true);
+            });
+
+            it('produces deterministic output from fixed seed', () => {
+                const seed = new Uint8Array(48).fill(4);
+                const kp1 = ECPairSigner.makeRandom(backend, networks.bitcoin, { rng: () => seed });
+                const kp2 = ECPairSigner.makeRandom(backend, networks.bitcoin, { rng: () => seed });
+                expect(bytesEqual(kp1.privateKey!, kp2.privateKey!)).toBe(true);
             });
 
             it('supports options', () => {
@@ -1559,45 +1558,34 @@ for (const [backendName, backend] of backendEntries) {
                     ECPairSigner.makeRandom(backend, networks.bitcoin, {
                         rng: () => new Uint8Array(28),
                     }),
-                ).toThrow(/Expected 32 bytes from rng, got 28/);
+                ).toThrow(/Expected 48 bytes from rng, got 28/);
             });
 
-            it('loops until d is within [1, n) : skips zero', () => {
-                let counter = 0;
-                const rng = () => {
-                    if (counter++ === 0) return new Uint8Array(ZERO);
-                    return new Uint8Array(ONE);
-                };
-                const kp = ECPairSigner.makeRandom(backend, networks.bitcoin, { rng });
+            it('reduces 48-byte all-zeros seed to private key 1', () => {
+                // 0 mod (n-1) + 1 = 1
+                const seed = new Uint8Array(48);
+                const kp = ECPairSigner.makeRandom(backend, networks.bitcoin, { rng: () => seed });
                 expect(bytesEqual(kp.privateKey!, ONE)).toBe(true);
             });
 
-            it('loops until d is within [1, n) : skips zero and n', () => {
-                let counter = 0;
-                const rng = () => {
-                    counter++;
-                    if (counter === 1) return new Uint8Array(ZERO);
-                    if (counter === 2) return new Uint8Array(GROUP_ORDER);
-                    return new Uint8Array(GROUP_ORDER_LESS_1);
-                };
-                const kp = ECPairSigner.makeRandom(backend, networks.bitcoin, { rng });
-                expect(bytesEqual(kp.privateKey!, GROUP_ORDER_LESS_1)).toBe(
-                    true,
-                );
+            it('reduces 48-byte seed via FIPS mod (n-1) + 1', () => {
+                // If seed encodes exactly n-1 as a 48-byte big-endian:
+                // (n-1) mod (n-1) + 1 = 0 + 1 = 1
+                const nMinus1Padded = new Uint8Array(48);
+                nMinus1Padded.set(GROUP_ORDER_LESS_1, 48 - 32);
+                const kp = ECPairSigner.makeRandom(backend, networks.bitcoin, { rng: () => nMinus1Padded });
+                expect(bytesEqual(kp.privateKey!, ONE)).toBe(true);
             });
 
-            it('uses backend.generatePrivateKey when available and no rng provided', () => {
-                // NobleBackend has generatePrivateKey; LegacyBackend does not
-                // Just verify it works without error
+            it('never produces zero from any seed', () => {
+                // Verify the +1 offset prevents zero: seed=0 → key=1
+                const seed = new Uint8Array(48);
+                const kp = ECPairSigner.makeRandom(backend, networks.bitcoin, { rng: () => seed });
+                expect(isPrivateKey(kp.privateKey!)).toBe(true);
+            });
+
+            it('uses crypto.getRandomValues as default rng', () => {
                 const kp = ECPairSigner.makeRandom(backend, networks.bitcoin);
-                expect(kp.privateKey).toBeDefined();
-            });
-
-            it('uses crypto.getRandomValues when no rng and no generatePrivateKey', () => {
-                const backendNoGen = mockBackend(backend, {
-                    generatePrivateKey: undefined,
-                });
-                const kp = ECPairSigner.makeRandom(backendNoGen, networks.bitcoin);
                 expect(kp.privateKey).toBeDefined();
             });
         });
@@ -2150,11 +2138,7 @@ describe('ECPairSigner edge cases', () => {
     });
 
     it('makeRandom uses crypto.getRandomValues as default rng', () => {
-        // Backend without generatePrivateKey forces the crypto.getRandomValues path
-        const backendNoGen = mockBackend(noble, {
-            generatePrivateKey: undefined,
-        });
-        const kp = ECPairSigner.makeRandom(backendNoGen, networks.bitcoin);
+        const kp = ECPairSigner.makeRandom(noble, networks.bitcoin);
         expect(kp.privateKey).toBeDefined();
         expect(kp.publicKey.length).toBe(33);
     });

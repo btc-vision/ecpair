@@ -10,7 +10,7 @@ import type {
 } from './branded.js';
 import { SignerCapability } from './capability.js';
 import type { Network } from './networks.js';
-import { assertBytes32, createPrivateKey, createPublicKey, createXOnlyPublicKey, concatBytes } from './types.js';
+import { assertBytes32, createPrivateKey, createPublicKey, createXOnlyPublicKey, concatBytes, EC_N } from './types.js';
 import { encodeWIF, decodeWIF } from './wif.js';
 
 /**
@@ -153,6 +153,37 @@ function toXOnly(pubKey: Uint8Array): XOnlyPublicKey {
 }
 
 /**
+ * FIPS 186-5 B.4.2 / RFC 9380 seed length.
+ *
+ * `fieldLen + ceil(fieldLen / 2)` = 32 + 16 = 48 bytes.
+ * The extra bytes eliminate modular bias to below 2^-128.
+ */
+const FIPS_SEED_LENGTH = 48;
+
+/**
+ * Interprets a byte array as a big-endian unsigned integer.
+ */
+function bytesToBigInt(bytes: Uint8Array): bigint {
+    let result = 0n;
+    for (let i = 0; i < bytes.length; i++) {
+        result = (result << 8n) | BigInt(bytes[i] as number);
+    }
+    return result;
+}
+
+/**
+ * Encodes a bigint as a 32-byte big-endian `Uint8Array`.
+ */
+function bigintToBytes32(n: bigint): Uint8Array {
+    const out = new Uint8Array(32);
+    for (let i = 31; i >= 0; i--) {
+        out[i] = Number(n & 0xffn);
+        n >>= 8n;
+    }
+    return out;
+}
+
+/**
  * Concrete secp256k1 key-pair signer backed by a {@link CryptoBackend}.
  *
  * Instances are created exclusively through the static factory methods
@@ -278,31 +309,25 @@ export class ECPairSigner implements UniversalSigner {
     /**
      * Generates a new signer with a random private key.
      *
-     * Uses `backend.generatePrivateKey()` when available, otherwise
-     * `crypto.getRandomValues`, unless a custom `rng` is provided.
+     * Uses FIPS 186-5 B.4.2 / RFC 9380 modular reduction:
+     * 48 bytes of entropy are reduced via `(seed mod (n − 1)) + 1`,
+     * producing a key in `[1, n)` with negligible bias (< 2^−128).
      *
      * @param backend - Cryptographic backend to use.
      * @param network - Target network.
      * @param options - Optional settings (rng, compressed).
      */
     public static makeRandom(backend: CryptoBackend, network: Network, options?: RandomSignerOptions): ECPairSigner {
-        let privateKeyBytes: Uint8Array;
-
-        if (backend.generatePrivateKey && !options?.rng) {
-            privateKeyBytes = backend.generatePrivateKey();
-        } else {
-            const rng =
-                options?.rng ?? ((size: number) => crypto.getRandomValues(new Uint8Array(size)));
-            do {
-                privateKeyBytes = rng(32);
-                if (privateKeyBytes.length !== 32) {
-                    throw new TypeError(
-                        `Expected 32 bytes from rng, got ${privateKeyBytes.length} bytes`,
-                    );
-                }
-            } while (!backend.isPrivate(privateKeyBytes));
+        const rng = options?.rng ?? ((size: number) => crypto.getRandomValues(new Uint8Array(size)));
+        const seed = rng(FIPS_SEED_LENGTH);
+        if (seed.length !== FIPS_SEED_LENGTH) {
+            throw new TypeError(
+                `Expected ${FIPS_SEED_LENGTH} bytes from rng, got ${seed.length} bytes`,
+            );
         }
-
+        const num = bytesToBigInt(seed);
+        const reduced = (num % (EC_N - 1n)) + 1n;
+        const privateKeyBytes = bigintToBytes32(reduced);
         return ECPairSigner.fromPrivateKey(backend, createPrivateKey(privateKeyBytes), network, options);
     }
 
@@ -398,7 +423,10 @@ export class ECPairSigner implements UniversalSigner {
         const extraData = new Uint8Array(32);
         const view = new DataView(extraData.buffer, extraData.byteOffset, extraData.byteLength);
         let counter = 0;
-        while (sig[0]! > 0x7f) {
+        for (;;) {
+            const b = sig[0];
+            if (b === undefined) throw new Error('Backend returned invalid signature');
+            if (b <= 0x7f) break;
             counter++;
             view.setUint32(0, counter, true);
             sig = this.#backend.sign(hash, this.#privateKey, extraData);
