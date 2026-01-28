@@ -88,38 +88,22 @@
         "d": "fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364142"
       },
       {
-        "exception": "ValiError: Invalid type: Expected boolean but received 2",
+        "exception": "Expected boolean for compressed",
         "d": "0000000000000000000000000000000000000000000000000000000000000001",
         "options": {
           "compressed": 2
-        }
-      },
-      {
-        "exception": "ValiError: Invalid type: Expected string | Uint8Array but received undefined",
-        "d": "0000000000000000000000000000000000000000000000000000000000000001",
-        "options": {
-          "network": {}
         }
       }
     ],
     "fromPublicKey": [
       {
-        "exception": "Error: Point not on the curve",
-        "Q": "",
-        "options": {}
-      },
-      {
-        "exception": "ValiError: Invalid type: Expected string | Uint8Array but received undefined",
-        "Q": "044289801366bcee6172b771cf5a7f13aaecd237a0b9a1ff9d769cabc2e6b70a34cec320a0565fb7caf11b1ca2f445f9b7b012dda5718b3cface369ee3a034ded6",
-        "options": {
-          "network": {}
-        }
+        "exception": "Point not on the curve",
+        "Q": ""
       },
       {
         "description": "Bad X coordinate (== P)",
-        "exception": "Error: Point not on the curve",
-        "Q": "040000000000000000000000000000000000000000000000000000000000000001fffffffffffffffffffffffffffffffffffffffffffffffffffffffefffffc2f",
-        "options": {}
+        "exception": "Point not on the curve",
+        "Q": "040000000000000000000000000000000000000000000000000000000000000001fffffffffffffffffffffffffffffffffffffffffffffffffffffffefffffc2f"
       }
     ],
     "fromWIF": [
