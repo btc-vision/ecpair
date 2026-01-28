@@ -1,51 +1,38 @@
-// https://en.bitcoin.it/wiki/List_of_address_prefixes
-
+/**
+ * BIP32 extended key version bytes for a given network.
+ *
+ * @see {@link https://github.com/bitcoin/bips/blob/master/bip-0032.mediawiki | BIP-32}
+ */
 export interface Bip32Versions {
+    /** Version prefix for extended public keys (xpub). */
     readonly public: number;
+    /** Version prefix for extended private keys (xprv). */
     readonly private: number;
 }
 
+/**
+ * Describes the parameters that distinguish one Bitcoin-compatible network
+ * from another (mainnet, testnet, regtest, altcoins, etc.).
+ *
+ * Consumers must supply a concrete {@link Network} object when constructing
+ * signers or encoding / decoding WIF strings; the library intentionally
+ * ships no hard-coded network constants.
+ *
+ * @see {@link https://en.bitcoin.it/wiki/List_of_address_prefixes | Address prefix reference}
+ */
 export interface Network {
+    /** Prefix prepended to messages before signing (e.g. `"\x18Bitcoin Signed Message:\n"`). */
     readonly messagePrefix: string | Uint8Array;
+    /** Bech32 human-readable part used for SegWit addresses (e.g. `"bc"`, `"tb"`). */
     readonly bech32: string;
+    /** Bech32 human-readable part used for OPNet witness-v16 addresses (e.g. `"op"`, `"opt"`). */
+    readonly bech32Opnet?: string;
+    /** BIP32 extended key version bytes. */
     readonly bip32: Bip32Versions;
+    /** Pay-to-public-key-hash version byte (e.g. `0x00` for mainnet). */
     readonly pubKeyHash: number;
+    /** Pay-to-script-hash version byte (e.g. `0x05` for mainnet). */
     readonly scriptHash: number;
+    /** Wallet Import Format version byte (e.g. `0x80` for mainnet). */
     readonly wif: number;
 }
-
-export const bitcoin: Network = {
-    messagePrefix: '\x18Bitcoin Signed Message:\n',
-    bech32: 'bc',
-    bip32: {
-        public: 0x0488b21e,
-        private: 0x0488ade4,
-    },
-    pubKeyHash: 0x00,
-    scriptHash: 0x05,
-    wif: 0x80,
-} as const;
-
-export const testnet: Network = {
-    messagePrefix: '\x18Bitcoin Signed Message:\n',
-    bech32: 'tb',
-    bip32: {
-        public: 0x043587cf,
-        private: 0x04358394,
-    },
-    pubKeyHash: 0x6f,
-    scriptHash: 0xc4,
-    wif: 0xef,
-} as const;
-
-export const regtest: Network = {
-    messagePrefix: '\x18Bitcoin Signed Message:\n',
-    bech32: 'bcrt',
-    bip32: {
-        public: 0x043587cf,
-        private: 0x04358394,
-    },
-    pubKeyHash: 0x6f,
-    scriptHash: 0xc4,
-    wif: 0xef,
-} as const;

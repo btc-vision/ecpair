@@ -1,11 +1,35 @@
+/**
+ * Bitfield flags describing the cryptographic operations an
+ * {@link import("./signer.js").ECPairSigner | ECPairSigner} can perform.
+ *
+ * Combine with bitwise OR (`|`) and test with bitwise AND (`&`).
+ *
+ * @example
+ * ```ts
+ * const caps = signer.capabilities;
+ * if (caps & SignerCapability.SchnorrSign) {
+ *     // Schnorr signing is available
+ * }
+ * ```
+ */
 export const SignerCapability = {
-    EcdsaSign: 0,
-    EcdsaVerify: 1,
-    SchnorrSign: 2,
-    SchnorrVerify: 3,
-    PrivateKeyExport: 4,
-    PublicKeyTweak: 5,
-    HdDerivation: 6,
+    /** Can produce ECDSA signatures (requires a private key). */
+    EcdsaSign: 1 << 0,
+    /** Can verify ECDSA signatures. */
+    EcdsaVerify: 1 << 1,
+    /** Can produce BIP-340 Schnorr signatures (requires a private key and backend support). */
+    SchnorrSign: 1 << 2,
+    /** Can verify BIP-340 Schnorr signatures (requires backend support). */
+    SchnorrVerify: 1 << 3,
+    /** Can export the raw private key bytes. */
+    PrivateKeyExport: 1 << 4,
+    /** Can derive a tweaked child key via Taproot-style tweaking. */
+    PublicKeyTweak: 1 << 5,
+    /** Supports BIP-32 hierarchical deterministic derivation. */
+    HdDerivation: 1 << 6,
 } as const;
 
+/**
+ * Union of all valid {@link SignerCapability} flag values.
+ */
 export type SignerCapability = (typeof SignerCapability)[keyof typeof SignerCapability];

@@ -32,11 +32,20 @@ function bytesToBigInt(bytes: Uint8Array): bigint {
     return result;
 }
 
+/**
+ * {@link CryptoBackend} implementation backed by `@noble/curves/secp256k1`.
+ *
+ * Pure JavaScript, no native dependencies.
+ *
+ * Prefer {@link createNobleBackend} for construction.
+ */
 export class NobleBackend implements CryptoBackend {
+    /** @inheritDoc */
     public isPrivate(d: Uint8Array): boolean {
         return secp256k1.utils.isValidSecretKey(d);
     }
 
+    /** @inheritDoc */
     public isPoint(p: Uint8Array): boolean {
         try {
             Point.fromHex(toHex(p));
@@ -46,6 +55,7 @@ export class NobleBackend implements CryptoBackend {
         }
     }
 
+    /** @inheritDoc */
     public pointFromScalar(d: PrivateKey, compressed?: boolean): PublicKey | null {
         try {
             return secp256k1.getPublicKey(d, compressed ?? true) as PublicKey;
@@ -54,11 +64,13 @@ export class NobleBackend implements CryptoBackend {
         }
     }
 
+    /** @inheritDoc */
     public pointCompress(p: PublicKey, compressed?: boolean): PublicKey {
         const point = Point.fromHex(toHex(p));
         return point.toBytes(compressed ?? true) as PublicKey;
     }
 
+    /** @inheritDoc */
     public pointAddScalar(p: PublicKey, tweak: Bytes32, compressed?: boolean): PublicKey | null {
         try {
             const point = Point.fromHex(toHex(p));
@@ -75,6 +87,7 @@ export class NobleBackend implements CryptoBackend {
         }
     }
 
+    /** @inheritDoc */
     public xOnlyPointAddTweak(p: XOnlyPublicKey, tweak: Bytes32): XOnlyPointAddTweakResult | null {
         try {
             const point = schnorr.utils.lift_x(bytesToBigInt(p));
@@ -94,6 +107,7 @@ export class NobleBackend implements CryptoBackend {
         }
     }
 
+    /** @inheritDoc */
     public privateAdd(d: PrivateKey, tweak: Bytes32): PrivateKey | null {
         const dBigint = bytesToBigInt(d);
         const tweakBigint = bytesToBigInt(tweak);
@@ -102,12 +116,14 @@ export class NobleBackend implements CryptoBackend {
         return bigintToBytes32(result) as PrivateKey;
     }
 
+    /** @inheritDoc */
     public privateNegate(d: PrivateKey): PrivateKey {
         const dBigint = bytesToBigInt(d);
         const result = mod(N - dBigint, N);
         return bigintToBytes32(result) as PrivateKey;
     }
 
+    /** @inheritDoc */
     public sign(hash: MessageHash, privateKey: PrivateKey, extraEntropy?: Uint8Array): Signature {
         return secp256k1.sign(hash, privateKey, {
             prehash: false,
@@ -116,6 +132,7 @@ export class NobleBackend implements CryptoBackend {
         }) as Signature;
     }
 
+    /** @inheritDoc */
     public verify(hash: MessageHash, publicKey: PublicKey, signature: Signature): boolean {
         return secp256k1.verify(signature, hash, publicKey, {
             prehash: false,
@@ -123,19 +140,27 @@ export class NobleBackend implements CryptoBackend {
         });
     }
 
+    /** @inheritDoc */
     public signSchnorr(hash: MessageHash, privateKey: PrivateKey, extraEntropy?: Uint8Array): SchnorrSignature {
         return schnorr.sign(hash, privateKey, extraEntropy) as SchnorrSignature;
     }
 
+    /** @inheritDoc */
     public verifySchnorr(hash: MessageHash, publicKey: XOnlyPublicKey, signature: SchnorrSignature): boolean {
         return schnorr.verify(signature, hash, publicKey);
     }
 
+    /** @inheritDoc */
     public generatePrivateKey(): PrivateKey {
         return secp256k1.utils.randomSecretKey() as PrivateKey;
     }
 }
 
+/**
+ * Creates a {@link NobleBackend} instance.
+ *
+ * @returns A new pure-JS secp256k1 backend powered by `@noble/curves`.
+ */
 export function createNobleBackend(): NobleBackend {
     return new NobleBackend();
 }
