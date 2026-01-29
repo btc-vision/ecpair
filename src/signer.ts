@@ -67,6 +67,50 @@ export interface SignerAsync {
 }
 
 /**
+ * Synchronous hierarchical-deterministic signer.
+ *
+ * Suitable for BIP-32 key pairs that can derive children and produce
+ * raw ECDSA signatures (no low-R grinding, no branded return type).
+ */
+export interface HDSigner {
+    /** SEC1-encoded public key (33 or 65 bytes). */
+    readonly publicKey: PublicKey;
+    /** The first 4 bytes of the sha256-ripemd160 of the publicKey. */
+    readonly fingerprint: Uint8Array;
+    /**
+     * Derives a child signer from a BIP-32 path.
+     * @param path - BIP-32 derivation path (e.g. `m/44'/0'/0'/1/23`).
+     */
+    derivePath(path: string): HDSigner;
+    /**
+     * Produces a 64-byte compact ECDSA signature over `hash`.
+     * @param hash - 32-byte message digest.
+     */
+    sign(hash: MessageHash): Uint8Array;
+}
+
+/**
+ * Asynchronous counterpart of {@link HDSigner} for hardware wallets or
+ * remote signing services.
+ */
+export interface HDSignerAsync {
+    /** SEC1-encoded public key (33 or 65 bytes). */
+    readonly publicKey: PublicKey;
+    /** The first 4 bytes of the sha256-ripemd160 of the publicKey. */
+    readonly fingerprint: Uint8Array;
+    /**
+     * Derives a child signer from a BIP-32 path.
+     * @param path - BIP-32 derivation path (e.g. `m/44'/0'/0'/1/23`).
+     */
+    derivePath(path: string): HDSignerAsync;
+    /**
+     * Produces a 64-byte compact ECDSA signature over `hash`.
+     * @param hash - 32-byte message digest.
+     */
+    sign(hash: MessageHash): Promise<Uint8Array>;
+}
+
+/**
  * Full-featured signer interface exposing every operation that
  * {@link ECPairSigner} supports.
  */
