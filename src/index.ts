@@ -56,6 +56,8 @@ export type { CryptoBackend, Parity, XOnlyPointAddTweakResult } from './backend.
 export type {
     Signer,
     SignerAsync,
+    HDSigner,
+    HDSignerAsync,
     UniversalSigner,
     SignerOptions,
     RandomSignerOptions,
