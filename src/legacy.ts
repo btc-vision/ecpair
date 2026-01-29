@@ -25,8 +25,10 @@ export interface TinySecp256k1Interface {
     isPrivate(d: Uint8Array): boolean;
     /** @see {@link CryptoBackend.pointFromScalar} */
     pointFromScalar(d: Uint8Array, compressed?: boolean): Uint8Array | null;
+    /** @see {@link CryptoBackend.isXOnlyPoint} */
+    isXOnlyPoint(p: Uint8Array): boolean;
     /** @see {@link CryptoBackend.pointAddScalar} */
-    pointAddScalar?(p: Uint8Array, tweak: Uint8Array, compressed?: boolean): Uint8Array | null;
+    pointAddScalar(p: Uint8Array, tweak: Uint8Array, compressed?: boolean): Uint8Array | null;
     /** @see {@link CryptoBackend.xOnlyPointAddTweak} */
     xOnlyPointAddTweak(
         p: Uint8Array,
@@ -103,9 +105,6 @@ export class LegacyBackend implements CryptoBackend {
 
     /** @inheritDoc */
     public pointAddScalar(p: PublicKey, tweak: Bytes32, compressed?: boolean): PublicKey | null {
-        if (!this.#ecc.pointAddScalar) {
-            throw new Error('pointAddScalar not supported by ecc library');
-        }
         return this.#ecc.pointAddScalar(p, tweak, compressed) as PublicKey | null;
     }
 
