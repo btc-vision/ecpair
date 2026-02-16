@@ -1,7 +1,7 @@
 import type { PrivateKey } from './branded.js';
 import type { Network } from './networks.js';
 import { createPrivateKey } from './types.js';
-import * as wif from 'wif';
+import { decode, encode } from '@btc-vision/wif';
 
 /**
  * Result of decoding a WIF-encoded private key via {@link decodeWIF}.
@@ -24,7 +24,7 @@ export interface WifDecodeResult {
  * @returns The WIF-encoded string.
  */
 export function encodeWIF(privateKey: PrivateKey, compressed: boolean, network: Network): string {
-    return wif.encode({
+    return encode({
         version: network.wif,
         privateKey,
         compressed,
@@ -47,7 +47,7 @@ export function decodeWIF(
     wifString: string,
     network: Network | readonly Network[],
 ): WifDecodeResult {
-    const decoded = wif.decode(wifString);
+    const decoded = decode(wifString);
     const version = decoded.version;
 
     if (Array.isArray(network)) {
